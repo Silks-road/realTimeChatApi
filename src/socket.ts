@@ -19,3 +19,40 @@ export interface IMessage {
   time: Date;
   value: string;
 }
+
+const sendMessage = (socket: Socket | Server) =>
+  (message: IMessage) => socket.emit("message", message);
+
+  export default (io: Server) => {
+    const messages: Set<IMessage> = new Set();
+
+    io.on("connection", (socket) => {
+      socket.on("getMessages", () => {
+        messages.forEach(sendMessages(socket));
+      });
+
+      socket.on("message", (value: string) => {
+        const message: IMessage = {
+          id: uuid(),
+          time: new Date(),
+          user: defaultUser,
+          value,
+        };
+
+        messages.add(message);
+
+        sendMessage(io)(message);
+
+        setTimeout(
+          () => {
+            messages.delete(message);
+            io.emit("deleteMessage", message.id);
+          },
+          messageExpirationTimeMS,
+        );
+
+      });
+
+    });
+
+  };
