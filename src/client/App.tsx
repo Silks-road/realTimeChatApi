@@ -1,3 +1,14 @@
 import React from "react";
+import io from "socket.io-client";
 
-export default () => <div>Hello world its me again :)</div>
+import MessageList from "./Messagelist";
+import NewMessage from "./NewMessage";
+
+const socket = io(location.origin);
+
+export default () => (
+  <div>
+    <MessageList socket={ socket }/>
+    <NewMessage socket={ socket }/>
+  </div>
+);
