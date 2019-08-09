@@ -1,9 +1,16 @@
 import { Map } from "immutable";
 import React, { SyntheticEvent, useEffect, useState } from "react";
+import { Socket } from "socket.io";
+
+interface IProps {
+  socket: Socket;
+}
 
 import "./MessageList.scss";
 
-const MessageList = ({ socket }) => {
+import { IMessage } from "../socket";
+
+const MessageList = ({ socket }: IProps) => {
   const [messages, setMessages] = useState(Map());
 
   useEffect(() => {
@@ -11,7 +18,7 @@ const MessageList = ({ socket }) => {
       setMessages((prevMessages) => prevMessages.set(message.id, message));
     };
 
-    const deleteListener = (messageID: string) => {
+    const deleteMessageListener = (messageID: string) => {
       setMessages((prevMessages) => prevMessages.delete(messageID);)
     };
 
@@ -21,10 +28,10 @@ const MessageList = ({ socket }) => {
 
     return () => {
       socket.off("message", messageListener);
-      socket.off("message", deleteMessageListener);
+      socket.off("deleteMessage", deleteMessageListener);
     };
 
-  } [socket]);
+  }, [socket]);
 
 return (
   <div className="message-list">
@@ -35,7 +42,7 @@ return (
         <div
           key={ message.id }
           className="message-list--message-container"
-          title={ `Sent at ${ new Date(message.time).toLocalTimeString() }` }
+          title={ `Sent at ${ new Date(message.time).toLocaleTimeString() }` }
         >
           <span className="message-list--message">{ message.value }</span>
           <span className="message-list--user">{ message.user.name }</span>
