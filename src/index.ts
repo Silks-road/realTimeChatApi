@@ -2,7 +2,7 @@ import express from "express";
 import Bundler from "parcel-bundler";
 import path from "path";
 import http from "http";
-import SocketIOServe from "socket.io";
+import SocketIOServer from "socket.io";
 
 import initializeSocketIO from "./socket";
 

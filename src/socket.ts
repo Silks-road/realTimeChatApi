@@ -4,20 +4,20 @@ import uuid from "uuid/v4";
 const messageExpirationTimeMS = 10 * 1000;
 
 export interface IUser {
-  id: string;
+    id: string;
   name: string;
 }
 
-const defaultUser: IUser {
-  id: "anon";
-  mane: "Anonymous",
+const defaultUser: IUser = {
+    id: "anon",
+  name: "Anonymous"
 };
 
 export interface IMessage {
   user: IUser;
-  id: string;
+    id: string;
   time: Date;
-  value: string;
+ value: string;
 }
 
 const sendMessage = (socket: Socket | Server) =>
@@ -28,12 +28,12 @@ const sendMessage = (socket: Socket | Server) =>
 
     io.on("connection", (socket) => {
       socket.on("getMessages", () => {
-        messages.forEach(sendMessages(socket));
+        messages.forEach(sendMessage(socket));
       });
 
       socket.on("message", (value: string) => {
         const message: IMessage = {
-          id: uuid(),
+            id: uuid(),
           time: new Date(),
           user: defaultUser,
           value,
