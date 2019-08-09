@@ -1,5 +1,7 @@
 import { Server, Socket } from "socket.io";
 import uuid from "uuid/v4";
+import OktaJwtVerifier from "@okta/jwt-verifier";
+import okta from "@okta/okta-sdk-nodejs";
 
 const messageExpirationTimeMS = 10 * 1000;
 
@@ -23,8 +25,45 @@ export interface IMessage {
 const sendMessage = (socket: Socket | Server) =>
   (message: IMessage) => socket.emit("message", message);
 
+const jwtVerifier = new OktaJwtVerifier({
+  clientid: process.env.OKTA_CLIENT_ID,
+    issuer: `${ process.env.OKTA_ORG_URL }/oauth2/default`
+});
+
+const oktaClient = new okta.Client({
+  orgUrl: process.env.OKTA_ORG_URL,
+   token: process.env.OKTA_TOKEN
+});
+
   export default (io: Server) => {
+
     const messages: Set<IMessage> = new Set();
+
+    io.use(async (socket, next) => {
+      const { token = null } = socket.handshake.query || {};
+      if (token) {
+        try {
+          const [ authType, tokenValue ] = token.trim().split(" ");
+          if (authType !== "Bearer") {
+            throw new Error("Expected a Bearer token");
+          }
+
+          const { claims: { sub } } = await jwtVerifier.verifyAccessToken(tokenValue);
+          const user = await oktaClient.getUser(sub);
+
+          users.set(socket, {
+              id: user.id,
+            name:[ user.profile.firstName, user.profile.lastName ].filter(Boolean).join(" "),
+          });
+
+        } catch (error) {
+          // tslint:disable-next-line:no-console
+          console.log(error);
+        }
+      }
+
+      next();
+    });
 
     io.on("connection", (socket) => {
       socket.on("getMessages", () => {
@@ -35,7 +74,7 @@ const sendMessage = (socket: Socket | Server) =>
         const message: IMessage = {
             id: uuid(),
           time: new Date(),
-          user: defaultUser,
+          user: users.get(socket) || defaultUser,
           value,
         };
 
@@ -50,7 +89,10 @@ const sendMessage = (socket: Socket | Server) =>
           },
           messageExpirationTimeMS,
         );
+      });
 
+      socket.on("disconnect", () => {
+        users.delete(socket);
       });
 
     });
